@@ -1,0 +1,4 @@
+data/
+weights/
+face_data/
+*.pth
