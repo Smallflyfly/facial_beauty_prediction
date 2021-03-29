@@ -150,6 +150,7 @@ class OSNet(nn.Module):
         #     return v
         y = self.classifier(v)
         if self.loss == 'smoothL1Loss':
+            print(y)
             return y
         elif self.loss == 'triplet':
             return y, v

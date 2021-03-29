@@ -14,9 +14,9 @@ class Prediction(FlyAI):
         self.model = self.model.cuda()
         self.transform = transforms.Compose(
             [
-                transforms.Resize((360, 360)),
+                transforms.Resize((226, 226)),
                 transforms.ToTensor(),
-                transforms.Normalize([0.568, 0.683, 0.597], [0.327, 0.302, 0.317])
+                # transforms.Normalize((0.568, 0.683, 0.597), (0.327, 0.302, 0.317))
             ]
         )
 
@@ -25,6 +25,7 @@ class Prediction(FlyAI):
         模型初始化，必须在此方法中加载模型
         '''
         model = osnet_x1_0(num_classes=1, loss='smoothL1Loss')
+        # load_pretrained_weights(model, 'weights/pretrained/osnet_x1_0_imagenet.pth')
         load_pretrained_weights(model, 'last.pth')
         return model
 
@@ -37,22 +38,23 @@ class Prediction(FlyAI):
         self.model.eval()
         cudnn.benchmark = True
         im = Image.open(image_path)
+        im.show()
         im = self.transform(im)
         im = im.unsqueeze(0)
         im = im.cuda()
-        out = self.model(im).cpu().detach().numpy()[0]
-        out = out.astype(float)
+        out = self.model(im)
+        print(out)
+        fang[-1]
+        # out = out.astype(float)
         # out = self.model(im)
         # print(out[0])
         out = out[0] * 5.0
         # print(out)
-        if out > 5:
-            out = out % 5
 
         return out
 
 
 if __name__ == '__main__':
     prediction = Prediction()
-    result = prediction.predict('data/input/FacialBeautyPrediction/image/711.jpg')
+    result = prediction.predict('data/input/FacialBeautyPrediction/image/5068.jpg')
     print(result)

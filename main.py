@@ -59,7 +59,8 @@ class Main(FlyAI):
         训练模型，必须实现此方法
         :return:
         '''
-        dataset = FacialBeautyDataset()
+        train_dataset = FacialBeautyDataset(mode='train')
+        # test_dataset = FacialBeautyDataset(mode='test')
         model = osnet_x1_0(num_classes=1, pretrained=True, loss='smoothL1Loss', use_gpu=True)
         # load_pretrained_weights(model, './weights/pretrained/osnet_x1_0_imagenet.pth')
         path = remote_helper.get_remote_data('https://www.flyai.com/m/osnet_x1_0_imagenet.pth')
@@ -70,10 +71,11 @@ class Main(FlyAI):
         batch_size = args.BATCH
         scheduler = build_scheduler(optimizer, lr_scheduler='cosine', max_epoch=max_epoch)
         criterion = nn.SmoothL1Loss()
-        model.train()
-        train_loader = DataLoader(dataset=dataset, batch_size=batch_size, shuffle=True)
+        train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+        # test_loader = DataLoader(dataset=test_dataset, batch_size=1)
         cudnn.benchmark = True
         for epoch in range(max_epoch):
+            model.train()
             for index, data in enumerate(train_loader):
                 im, label = data
                 im = im.cuda()
@@ -87,6 +89,18 @@ class Main(FlyAI):
                     print("Epoch: [{}/{}][{}/{}]  Loss {:.4f}".format(epoch+1, max_epoch, index+1,
                                                                                   len(train_loader), loss))
             scheduler.step()
+            # if (epoch+1) % 5 == 0:
+            #     model.eval()
+            #     sum_r = 0.
+            #     for data in test_loader:
+            #         im, label = data
+            #         im = im.cuda()
+            #         y = model(im).cpu().detach().numpy()[0][0]
+            #         label = label.cpu().detach().numpy()[0]
+            #         sum_r += (y*5.0-label*5.0)**2
+            #     RMSE = sum_r / len(test_loader)
+            #     print('RMSE:{}'.format(RMSE))
+
         torch.save(model.state_dict(), 'last.pth')
 
 
