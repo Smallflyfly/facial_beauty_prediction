@@ -7,8 +7,8 @@ from torchvision.models.inception import inception_v3
 __all__ = ['inception_iccv']
 
 
-def inception(pretrained=True, debug=False, weight='', num_classes=1, **kwargs):
-    model = InceptionNet(**kwargs)
+def inception(pretrained=True, weight='', num_classes=1):
+    model = InceptionNet(num_classes=num_classes)
     """
         pretrained model: 'https://github.com/Cadene/pretrained-models.pytorch/blob/master/pretrainedmodels/models/bninception.py'
     """
@@ -94,7 +94,7 @@ class SpatialTransformBlock(nn.Module):
 
 
 class InceptionNet(nn.Module):
-    def __init__(self, num_classes=51):
+    def __init__(self, num_classes=1):
         super(InceptionNet, self).__init__()
         self.num_classes = num_classes
         self.main_branch = BNInception()

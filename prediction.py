@@ -4,6 +4,7 @@ from flyai.framework import FlyAI
 from torch.backends import cudnn
 from torchvision import transforms
 
+from model.inception_iccv import inception
 from model.osnet import osnet_x1_0
 from utils.utils import load_pretrained_weights
 
@@ -24,9 +25,10 @@ class Prediction(FlyAI):
         '''
         模型初始化，必须在此方法中加载模型
         '''
-        model = osnet_x1_0(num_classes=1, loss='smoothL1Loss')
+        # model = osnet_x1_0(num_classes=1, loss='smoothL1Loss')
         # load_pretrained_weights(model, 'weights/pretrained/osnet_x1_0_imagenet.pth')
-        load_pretrained_weights(model, 'last.pth')
+        # load_pretrained_weights(model, 'last.pth')
+        model = inception(weight='net_10.pth', num_classes=1)
         return model
 
     def predict(self, image_path):
@@ -53,5 +55,5 @@ class Prediction(FlyAI):
 
 if __name__ == '__main__':
     prediction = Prediction()
-    result = prediction.predict('data/input/FacialBeautyPrediction/image/1929.jpg')
+    result = prediction.predict('face_data/Images/AM542.jpg')
     print(result)

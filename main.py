@@ -73,7 +73,7 @@ class Main(FlyAI):
         batch_size = args.BATCH
         # scheduler = build_scheduler(optimizer, lr_scheduler='multi_step', stepsize=[20, 30])
         scheduler = build_scheduler(optimizer, lr_scheduler='cosine', max_epoch=max_epoch)
-        criterion = nn.SmoothL1Loss()
+        criterion = nn.MSELoss()
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(dataset=test_dataset, batch_size=1)
         cudnn.benchmark = True
@@ -88,6 +88,9 @@ class Main(FlyAI):
                 # fang[-1]
                 optimizer.zero_grad()
                 out = model(im)
+                print(out)
+                print(label)
+                fang[-1]
                 loss = criterion(out, label)
                 loss.backward()
                 optimizer.step()
