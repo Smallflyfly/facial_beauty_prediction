@@ -15,6 +15,7 @@ from model.osnet import osnet_x1_0
 from path import MODEL_PATH
 from utils.utils import load_pretrained_weights, build_optimizer, build_scheduler
 import torch.nn as nn
+import tensorboardX as tb
 
 
 '''
@@ -64,9 +65,10 @@ class Main(FlyAI):
         test_dataset = FacialBeautyDataset(mode='test')
         # model = osnet_x1_0(num_classes=1, pretrained=True, loss='smoothL1Loss', use_gpu=True)
         # load_pretrained_weights(model, './weights/pretrained/osnet_x1_0_imagenet.pth')
-        # path = remote_helper.get_remote_data('https://www.flyai.com/m/osnet_x1_0_imagenet.pth')
-        # load_pretrained_weights(model, path)
-        model = inception(weight='./weights/bn_inception-52deb4733.pth', num_classes=1)
+        path = remote_helper.get_remote_data('http://data.lip6.fr/cadene/pretrainedmodels/bn_inception-52deb4733.pth')
+        model = inception(path, num_classes=1, mode='train')
+        load_pretrained_weights(model, path)
+        # model = inception(weight='./weights/bn_inception-52deb4733.pth', num_classes=1)
         model = model.cuda()
         optimizer = build_optimizer(model, optim='adam')
         max_epoch = args.EPOCHS
@@ -77,6 +79,7 @@ class Main(FlyAI):
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(dataset=test_dataset, batch_size=1)
         cudnn.benchmark = True
+        writer = tb.SummaryWriter()
         for epoch in range(max_epoch):
             model.train()
             for index, data in enumerate(train_loader):
@@ -88,17 +91,16 @@ class Main(FlyAI):
                 # fang[-1]
                 optimizer.zero_grad()
                 out = model(im)
-                print(out)
-                print(label)
-                fang[-1]
                 loss = criterion(out, label)
                 loss.backward()
                 optimizer.step()
-                if index % 100 == 0:
+                if index % 50 == 0:
                     print("Epoch: [{}/{}][{}/{}]  Loss {:.4f}".format(epoch+1, max_epoch, index+1,
                                                                                   len(train_loader), loss))
+                    num_epochs = epoch*batch_size+index
+                    writer.add_scalar('loss', loss, num_epochs)
             scheduler.step()
-            if (epoch+1) % 5 == 0:
+            if (epoch+1) % 1 == 0:
                 model.eval()
                 sum_r = 0.
                 for data in test_loader:
@@ -112,6 +114,7 @@ class Main(FlyAI):
                 torch.save(model.state_dict(), 'net_{}.pth'.format(str(epoch+1)))
 
         torch.save(model.state_dict(), 'last.pth')
+        writer.close()
 
 
 if __name__ == '__main__':

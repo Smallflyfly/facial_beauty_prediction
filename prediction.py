@@ -28,7 +28,7 @@ class Prediction(FlyAI):
         # model = osnet_x1_0(num_classes=1, loss='smoothL1Loss')
         # load_pretrained_weights(model, 'weights/pretrained/osnet_x1_0_imagenet.pth')
         # load_pretrained_weights(model, 'last.pth')
-        model = inception(weight='net_10.pth', num_classes=1)
+        model = inception(weight='net_30.pth', num_classes=1, mode='test')
         return model
 
     def predict(self, image_path):
@@ -44,7 +44,9 @@ class Prediction(FlyAI):
         im = self.transform(im)
         im = im.unsqueeze(0)
         im = im.cuda()
-        out = self.model(im).cpu().detach().numpy()[0][0]
+        out = self.model(im)
+        print(out)
+        out = out.cpu().detach().numpy()[0][0]
         # out = out.astype(float)
         # out = self.model(im)
         # print(out[0])
@@ -55,5 +57,5 @@ class Prediction(FlyAI):
 
 if __name__ == '__main__':
     prediction = Prediction()
-    result = prediction.predict('face_data/Images/AM542.jpg')
+    result = prediction.predict('face_data/Images/AM1054.jpg')
     print(result)

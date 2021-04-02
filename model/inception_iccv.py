@@ -6,25 +6,29 @@ from torchvision.models.inception import inception_v3
 
 __all__ = ['inception_iccv']
 
+from utils.utils import load_pretrained_weights
 
-def inception(pretrained=True, weight='', num_classes=1):
+
+def inception(pretrained=True, weight='', num_classes=1, mode='train'):
     model = InceptionNet(num_classes=num_classes)
     """
         pretrained model: 'https://github.com/Cadene/pretrained-models.pytorch/blob/master/pretrainedmodels/models/bninception.py'
     """
-    if pretrained:
-        pretrained_dict = torch.load(weight)
-        # pretrained_dict = torch.load('./weights/rap/inception_iccv/21.pth')
-        model_dict = model.state_dict()
-        new_dict = {}
-        for k,_ in model_dict.items():
-            raw_name = k.replace('main_branch.', '')
-            if raw_name in pretrained_dict:
-                new_dict[k] = pretrained_dict[raw_name]
-        model_dict.update(new_dict)
-
-        model.load_state_dict(model_dict)
-    print("model load finshed!")
+    # if mode=='train':
+    #     pretrained_dict = torch.load(weight)
+    #     # pretrained_dict = torch.load('./weights/rap/inception_iccv/21.pth')
+    #     model_dict = model.state_dict()
+    #     new_dict = {}
+    #     for k,_ in model_dict.items():
+    #         raw_name = k.replace('main_branch.', '')
+    #         if raw_name in pretrained_dict:
+    #             new_dict[k] = pretrained_dict[raw_name]
+    #     model_dict.update(new_dict)
+    #
+    #     model.load_state_dict(model_dict)
+    # else:
+    #     load_pretrained_weights(model, weight)
+    # print("model load finshed!")
     return model
 
 

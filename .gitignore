@@ -2,3 +2,5 @@ data/
 weights/
 face_data/
 *.pth
+runs/
+.idea/
