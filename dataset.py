@@ -42,12 +42,8 @@ class FacialBeautyDataset(Dataset):
         self.process_data()
 
     def process_data(self):
-        # images = os.listdir(self.image_path)
+        images = os.listdir(self.image_path)
         # self.read_csv()
-        # for image in images:
-        #     if image.endswith(".jpg"):
-        #         self.train_image.append(os.path.join(self.image_path, image))
-        #         self.labels.append(self.label_map[image])
         # #######################
         if self.mode == 'train':
             file = self.train_txt

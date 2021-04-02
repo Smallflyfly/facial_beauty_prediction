@@ -10,6 +10,7 @@ from torch.backends import cudnn
 from torch.utils.data import DataLoader
 
 from dataset import FacialBeautyDataset
+from model.inception_iccv import inception
 from model.osnet import osnet_x1_0
 from path import MODEL_PATH
 from utils.utils import load_pretrained_weights, build_optimizer, build_scheduler
@@ -61,20 +62,20 @@ class Main(FlyAI):
         '''
         train_dataset = FacialBeautyDataset(mode='train')
         test_dataset = FacialBeautyDataset(mode='test')
-        model = osnet_x1_0(num_classes=1, pretrained=True, loss='smoothL1Loss', use_gpu=True)
+        # model = osnet_x1_0(num_classes=1, pretrained=True, loss='smoothL1Loss', use_gpu=True)
         # load_pretrained_weights(model, './weights/pretrained/osnet_x1_0_imagenet.pth')
-        path = remote_helper.get_remote_data('https://www.flyai.com/m/osnet_x1_0_imagenet.pth')
-        load_pretrained_weights(model, path)
+        # path = remote_helper.get_remote_data('https://www.flyai.com/m/osnet_x1_0_imagenet.pth')
+        # load_pretrained_weights(model, path)
+        model = inception(weight='./weights/bn_inception-52deb4733.pth', num_classes=1)
         model = model.cuda()
-        optimizer = build_optimizer(model)
+        optimizer = build_optimizer(model, optim='adam')
         max_epoch = args.EPOCHS
         batch_size = args.BATCH
+        # scheduler = build_scheduler(optimizer, lr_scheduler='multi_step', stepsize=[20, 30])
         scheduler = build_scheduler(optimizer, lr_scheduler='cosine', max_epoch=max_epoch)
         criterion = nn.SmoothL1Loss()
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(dataset=test_dataset, batch_size=1)
-        print(len(train_loader))
-        print(len(test_loader))
         cudnn.benchmark = True
         for epoch in range(max_epoch):
             model.train()

@@ -16,7 +16,7 @@ class Prediction(FlyAI):
             [
                 transforms.Resize((226, 226)),
                 transforms.ToTensor(),
-                # transforms.Normalize((0.568, 0.683, 0.597), (0.327, 0.302, 0.317))
+                transforms.Normalize((0.568, 0.683, 0.597), (0.327, 0.302, 0.317))
             ]
         )
 
@@ -38,23 +38,20 @@ class Prediction(FlyAI):
         self.model.eval()
         cudnn.benchmark = True
         im = Image.open(image_path)
-        im.show()
+        # im.show()
         im = self.transform(im)
         im = im.unsqueeze(0)
         im = im.cuda()
-        out = self.model(im)
-        print(out)
-        fang[-1]
+        out = self.model(im).cpu().detach().numpy()[0][0]
         # out = out.astype(float)
         # out = self.model(im)
         # print(out[0])
-        out = out[0] * 5.0
-        # print(out)
+        out = out * 5.0
 
         return out
 
 
 if __name__ == '__main__':
     prediction = Prediction()
-    result = prediction.predict('data/input/FacialBeautyPrediction/image/5068.jpg')
+    result = prediction.predict('data/input/FacialBeautyPrediction/image/1929.jpg')
     print(result)
