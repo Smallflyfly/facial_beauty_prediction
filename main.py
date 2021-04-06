@@ -16,6 +16,7 @@ from path import MODEL_PATH
 from utils.utils import load_pretrained_weights, build_optimizer, build_scheduler
 import torch.nn as nn
 import tensorboardX as tb
+from torchvision.models.resnet import resnet101
 
 
 '''
@@ -63,10 +64,12 @@ class Main(FlyAI):
         '''
         train_dataset = FacialBeautyDataset(mode='train')
         test_dataset = FacialBeautyDataset(mode='test')
-        # model = osnet_x1_0(num_classes=1, pretrained=True, loss='smoothL1Loss', use_gpu=True)
+        # net_x1_0(num_classes=1, pretrained=True, loss='smoothL1Loss', use_gpu=True)
         # load_pretrained_weights(model, './weights/pretrained/osnet_x1_0_imagenet.pth')
-        path = remote_helper.get_remote_data('http://data.lip6.fr/cadene/pretrainedmodels/bn_inception-52deb4733.pth')
-        model = inception(path, num_classes=1, mode='train')
+        path = remote_helper.get_remote_data('https://www.flyai.com/m/resnet101-5d3b4d8f.pth')
+        # path = 'weights/bn_inception-52deb4733.pth'
+        # model = inception(num_classes=1)
+        model = resnet101(num_classes=1)
         load_pretrained_weights(model, path)
         # model = inception(weight='./weights/bn_inception-52deb4733.pth', num_classes=1)
         model = model.cuda()
@@ -95,12 +98,12 @@ class Main(FlyAI):
                 loss.backward()
                 optimizer.step()
                 if index % 50 == 0:
-                    print("Epoch: [{}/{}][{}/{}]  Loss {:.4f}".format(epoch+1, max_epoch, index+1,
-                                                                                  len(train_loader), loss))
+                    print("Epoch: [{}/{}][{}/{}]  Loss {:.6f}".format(epoch+1, max_epoch, index+1,
+                                                                                  len(train_loader), loss*5.0))
                     num_epochs = epoch*batch_size+index
                     writer.add_scalar('loss', loss, num_epochs)
             scheduler.step()
-            if (epoch+1) % 1 == 0:
+            if (epoch+1) % 5 == 0:
                 model.eval()
                 sum_r = 0.
                 for data in test_loader:
@@ -109,7 +112,8 @@ class Main(FlyAI):
                     y = model(im).cpu().detach().numpy()[0][0]
                     label = label.cpu().detach().numpy()[0]
                     sum_r += (y*5.0-label*5.0)**2
-                RMSE = sum_r / len(test_loader)
+                RMSE = sum_r
+                writer.add_scalar('sum-rmse', RMSE)
                 print('RMSE:{}'.format(RMSE))
                 torch.save(model.state_dict(), 'net_{}.pth'.format(str(epoch+1)))
 

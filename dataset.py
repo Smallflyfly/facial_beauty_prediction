@@ -27,14 +27,14 @@ class FacialBeautyDataset(Dataset):
         self.label_map = {}
         self.transform = transforms.Compose(
             [
-                transforms.Resize((226, 226)),
+                transforms.Resize((256, 256)),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize([0.568, 0.683, 0.597], [0.327, 0.302, 0.317])
             ]
         ) if self.mode == 'train' else transforms.Compose(
             [
-                transforms.Resize((226, 226)),
+                transforms.Resize((256, 256)),
                 transforms.ToTensor(),
                 transforms.Normalize([0.568, 0.683, 0.597], [0.327, 0.302, 0.317])
             ]
@@ -42,7 +42,7 @@ class FacialBeautyDataset(Dataset):
         self.process_data()
 
     def process_data(self):
-        images = os.listdir(self.image_path)
+        # images = os.listdir(self.image_path)
         # self.read_csv()
         # #######################
         if self.mode == 'train':
@@ -55,7 +55,7 @@ class FacialBeautyDataset(Dataset):
                 line = line.decode('utf-8')
                 line = line.strip()
                 line = line.split()
-                image = os.path.join(self.image_path, line[0])
+                image = line[0]
                 label = float(line[1])
                 self.train_image.append(image)
                 self.labels.append(label)
@@ -73,7 +73,7 @@ class FacialBeautyDataset(Dataset):
 
     def __getitem__(self, index):
         image = self.train_image[index]
-        # image = os.path.join(self.image_path, image)
+        image = os.path.join(self.image_path, image)
         label = self.labels[index]
         im = Image.open(image)
         im = self.transform(im)

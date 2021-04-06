@@ -9,7 +9,7 @@ __all__ = ['inception_iccv']
 from utils.utils import load_pretrained_weights
 
 
-def inception(pretrained=True, weight='', num_classes=1, mode='train'):
+def inception(num_classes=1):
     model = InceptionNet(num_classes=num_classes)
     """
         pretrained model: 'https://github.com/Cadene/pretrained-models.pytorch/blob/master/pretrainedmodels/models/bninception.py'
@@ -102,7 +102,7 @@ class InceptionNet(nn.Module):
         super(InceptionNet, self).__init__()
         self.num_classes = num_classes
         self.main_branch = BNInception()
-        self.global_pool = nn.AvgPool2d((7,7), stride=1, padding=0, ceil_mode=True, count_include_pad=True)
+        self.global_pool = nn.AvgPool2d((8,8), stride=1, padding=0, ceil_mode=True, count_include_pad=True)
         self.finalfc = nn.Linear(1024, num_classes)
 
         self.st_3b = SpatialTransformBlock(num_classes, 32, 256*3)
@@ -114,6 +114,13 @@ class InceptionNet(nn.Module):
         self.latlayer_4d = nn.Conv2d(608, 256, kernel_size=1, stride=1, padding=0)
         self.latlayer_5b = nn.Conv2d(1024, 256, kernel_size=1, stride=1, padding=0)
 
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
     def _upsample_add(self, x, y):
         _,_,H,W = y.size()
         up_feat = F.interpolate(x, (H, W), mode='bilinear', align_corners=False)
@@ -122,6 +129,7 @@ class InceptionNet(nn.Module):
     def forward(self, input):
         bs = input.size(0)
         feat_3b, feat_4d, feat_5b = self.main_branch(input)
+        # print(feat_5b.shape)
         main_feat = self.global_pool(feat_5b).view(bs,-1)
         main_pred = self.finalfc(main_feat)
 
