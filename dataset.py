@@ -27,7 +27,7 @@ class FacialBeautyDataset(Dataset):
         self.label_map = {}
         self.transform = transforms.Compose(
             [
-                transforms.Resize((256, 256)),
+                transforms.Resize((224, 224)),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize([0.568, 0.683, 0.597], [0.327, 0.302, 0.317])

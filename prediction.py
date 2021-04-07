@@ -7,6 +7,7 @@ from torchvision import transforms
 from model.inception_iccv import inception
 from model.osnet import osnet_x1_0
 from utils.utils import load_pretrained_weights
+from torchvision.models.resnet import resnet101
 
 
 class Prediction(FlyAI):
@@ -15,7 +16,7 @@ class Prediction(FlyAI):
         self.model = self.model.cuda()
         self.transform = transforms.Compose(
             [
-                transforms.Resize((256, 256)),
+                transforms.Resize((224, 224)),
                 transforms.ToTensor(),
                 transforms.Normalize((0.568, 0.683, 0.597), (0.327, 0.302, 0.317))
             ]
@@ -28,7 +29,8 @@ class Prediction(FlyAI):
         # model = osnet_x1_0(num_classes=1, loss='smoothL1Loss')
         # load_pretrained_weights(model, 'weights/pretrained/osnet_x1_0_imagenet.pth')
         # load_pretrained_weights(model, 'last.pth')
-        model = inception(num_classes=1)
+        # model = inception(num_classes=1)
+        model = resnet101(num_classes=1)
         load_pretrained_weights(model, 'last.pth')
         return model
 

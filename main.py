@@ -10,13 +10,15 @@ from torch.backends import cudnn
 from torch.utils.data import DataLoader
 
 from dataset import FacialBeautyDataset
-from model.inception_iccv import inception
-from model.osnet import osnet_x1_0
+# from model.inception_iccv import inception
+# from model.osnet import osnet_x1_0
+from model.senet import senet154
 from path import MODEL_PATH
 from utils.utils import load_pretrained_weights, build_optimizer, build_scheduler
 import torch.nn as nn
 import tensorboardX as tb
-from torchvision.models.resnet import resnet101
+# from torchvision.models.resnet import resnet101
+# from torchvision.models.squeezenet import squeezenet1_0
 
 
 '''
@@ -66,10 +68,11 @@ class Main(FlyAI):
         test_dataset = FacialBeautyDataset(mode='test')
         # net_x1_0(num_classes=1, pretrained=True, loss='smoothL1Loss', use_gpu=True)
         # load_pretrained_weights(model, './weights/pretrained/osnet_x1_0_imagenet.pth')
-        path = remote_helper.get_remote_data('https://www.flyai.com/m/resnet101-5d3b4d8f.pth')
-        # path = 'weights/bn_inception-52deb4733.pth'
+        # path = remote_helper.get_remote_data('https://www.flyai.com/m/senet154-c7b49a05.pth')
+        path = 'data/input/model/senet154-c7b49a05.pth'
         # model = inception(num_classes=1)
-        model = resnet101(num_classes=1)
+        # model = resnet101(num_classes=1)
+        model = senet154(num_classes=1)
         load_pretrained_weights(model, path)
         # model = inception(weight='./weights/bn_inception-52deb4733.pth', num_classes=1)
         model = model.cuda()
@@ -83,6 +86,7 @@ class Main(FlyAI):
         test_loader = DataLoader(dataset=test_dataset, batch_size=1)
         cudnn.benchmark = True
         writer = tb.SummaryWriter()
+        print(len(test_loader))
         for epoch in range(max_epoch):
             model.train()
             for index, data in enumerate(train_loader):
@@ -100,10 +104,11 @@ class Main(FlyAI):
                 if index % 50 == 0:
                     print("Epoch: [{}/{}][{}/{}]  Loss {:.6f}".format(epoch+1, max_epoch, index+1,
                                                                                   len(train_loader), loss*5.0))
-                    num_epochs = epoch*batch_size+index
+                    num_epochs = epoch*len(train_loader)+index
+                    # print(num_epochs)
                     writer.add_scalar('loss', loss, num_epochs)
             scheduler.step()
-            if (epoch+1) % 5 == 0:
+            if (epoch+1) % 2 == 0:
                 model.eval()
                 sum_r = 0.
                 for data in test_loader:
@@ -113,9 +118,10 @@ class Main(FlyAI):
                     label = label.cpu().detach().numpy()[0]
                     sum_r += (y*5.0-label*5.0)**2
                 RMSE = sum_r
-                writer.add_scalar('sum-rmse', RMSE)
+                num_epochs = epoch
+                writer.add_scalar('sum-rmse', RMSE, num_epochs)
                 print('RMSE:{}'.format(RMSE))
-                torch.save(model.state_dict(), 'net_{}.pth'.format(str(epoch+1)))
+                # torch.save(model.state_dict(), 'net_{}.pth'.format(str(epoch+1)))
 
         torch.save(model.state_dict(), 'last.pth')
         writer.close()
@@ -123,5 +129,5 @@ class Main(FlyAI):
 
 if __name__ == '__main__':
     main = Main()
-    main.download_data()
+    # main.download_data()
     main.train()
