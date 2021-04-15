@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from dataset import FacialBeautyDataset
 # from model.inception_iccv import inception
 # from model.osnet import osnet_x1_0
+from emd_loss import EDMLoss
 from model.senet import senet154
 from path import MODEL_PATH
 from utils.utils import load_pretrained_weights, build_optimizer, build_scheduler
@@ -74,6 +75,7 @@ class Main(FlyAI):
         # model = resnet101(num_classes=1)
         model = senet154(num_classes=1)
         load_pretrained_weights(model, path)
+        softmax = nn.Softmax(dim=1)
         # model = inception(weight='./weights/bn_inception-52deb4733.pth', num_classes=1)
         model = model.cuda()
         optimizer = build_optimizer(model, optim='adam')
@@ -81,7 +83,8 @@ class Main(FlyAI):
         batch_size = args.BATCH
         # scheduler = build_scheduler(optimizer, lr_scheduler='multi_step', stepsize=[20, 30])
         scheduler = build_scheduler(optimizer, lr_scheduler='cosine', max_epoch=max_epoch)
-        criterion = nn.MSELoss()
+        # criterion = nn.MSELoss()
+        criterion = EDMLoss().cuda()
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(dataset=test_dataset, batch_size=1)
         cudnn.benchmark = True
@@ -98,6 +101,7 @@ class Main(FlyAI):
                 # fang[-1]
                 optimizer.zero_grad()
                 out = model(im)
+                out = softmax(out)
                 loss = criterion(out, label)
                 loss.backward()
                 optimizer.step()
