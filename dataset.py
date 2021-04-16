@@ -78,8 +78,9 @@ class FacialBeautyDataset(Dataset):
         im = Image.open(image)
         im = self.transform(im)
         # label [0, 5] -> [0, 1]
-        label = label / 5
-        return im, label
+        cls_label = int(label)
+        val_label = label - cls_label * 1.0
+        return im, cls_label, val_label
 
     def __len__(self):
         return len(self.train_image)

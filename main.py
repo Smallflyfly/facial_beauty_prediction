@@ -20,6 +20,7 @@ import torch.nn as nn
 import tensorboardX as tb
 # from torchvision.models.resnet import resnet101
 # from torchvision.models.squeezenet import squeezenet1_0
+import numpy as np
 
 
 '''
@@ -75,7 +76,6 @@ class Main(FlyAI):
         # model = resnet101(num_classes=1)
         model = senet154(num_classes=1)
         load_pretrained_weights(model, path)
-        softmax = nn.Softmax(dim=1)
         # model = inception(weight='./weights/bn_inception-52deb4733.pth', num_classes=1)
         model = model.cuda()
         optimizer = build_optimizer(model, optim='adam')
@@ -84,7 +84,9 @@ class Main(FlyAI):
         # scheduler = build_scheduler(optimizer, lr_scheduler='multi_step', stepsize=[20, 30])
         scheduler = build_scheduler(optimizer, lr_scheduler='cosine', max_epoch=max_epoch)
         # criterion = nn.MSELoss()
-        criterion = EDMLoss().cuda()
+        # criterion = EDMLoss().cuda()
+        criterion1 = nn.CrossEntropyLoss()
+        criterion2 = nn.MSELoss()
         train_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(dataset=test_dataset, batch_size=1)
         cudnn.benchmark = True
@@ -93,16 +95,18 @@ class Main(FlyAI):
         for epoch in range(max_epoch):
             model.train()
             for index, data in enumerate(train_loader):
-                im, label = data
+                im, cls_label, val_label = data
                 im = im.cuda()
-                label = label.float().unsqueeze(1).cuda()
+                val_label = val_label.float().unsqueeze(1).cuda()
                 # print(label.shape)
                 # print(im.shape)
                 # fang[-1]
                 optimizer.zero_grad()
-                out = model(im)
-                out = softmax(out)
-                loss = criterion(out, label)
+                out1, out2 = model(im)
+                # loss = criterion(out, label)
+                cls_loss = criterion1(out1, cls_label)
+                reg_loss = criterion2(out2, val_label)
+                loss = cls_loss + reg_loss
                 loss.backward()
                 optimizer.step()
                 if index % 50 == 0:
@@ -116,11 +120,15 @@ class Main(FlyAI):
                 model.eval()
                 sum_r = 0.
                 for data in test_loader:
-                    im, label = data
+                    im, cls_label, val_label = data
                     im = im.cuda()
-                    y = model(im).cpu().detach().numpy()[0][0]
-                    label = label.cpu().detach().numpy()[0]
-                    sum_r += (y*5.0-label*5.0)**2
+                    y1, y2 = model(im)
+                    y1 = nn.Softmax(y1).cpu().detach().numpy()
+                    index = np.argmax(y1, axis=1)
+                    y2 = y2.cpu().detach().numpy()[0][0]
+                    y = index + y2
+                    y_gt = cls_label + val_label
+                    sum_r += (y-y_gt)**2
                 RMSE = sum_r
                 num_epochs = epoch
                 writer.add_scalar('sum-rmse', RMSE, num_epochs)
